@@ -1,0 +1,160 @@
+swagger: '2.0'
+info:
+  version: "1.0.0"
+  title: Warehouse API
+  description: API для работы с товарами на складе
+host: localhost:8080
+basePath: /
+schemes:
+  - http
+paths:
+  /reserve:
+    post:
+      summary: Резервирование товара на складе для доставки
+      description: Резервирует указанные товары на складе
+      parameters:
+        - in: body
+          name: body
+          description: Массив уникальных кодов товара и идентификатор склада
+          required: true
+          schema:
+            type: object
+            properties:
+              product_codes:
+                type: array
+                items:
+                  type: string
+                example: [ "code1", "code2" ]
+              warehouse_id:
+                type: integer
+                example: 1
+      responses:
+        200:
+          description: Успешное резервирование товаров
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Products reserved successfully"
+        400:
+          description: Ошибка в запросе
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Insufficient product quantity"
+  /release:
+    post:
+      summary: Освобождение резерва товаров
+      description: Освобождает указанные товары из резерва
+      parameters:
+        - in: body
+          name: body
+          description: Массив уникальных кодов товара и идентификатор склада
+          required: true
+          schema:
+            type: object
+            properties:
+              product_codes:
+                type: array
+                items:
+                  type: string
+                example: [ "code1", "code2" ]
+              warehouse_id:
+                type: integer
+                example: 1
+      responses:
+        200:
+          description: Успешное освобождение товаров из резерва
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Products released successfully"
+        400:
+          description: Ошибка в запросе
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "No reserved products to release"
+  /inventory:
+    get:
+      summary: Получение количества оставшихся товаров на складе
+      description: Возвращает количество товаров, оставшихся на складе
+      parameters:
+        - in: query
+          name: warehouse_id
+          type: integer
+          required: true
+          description: Идентификатор склада
+      responses:
+        200:
+          description: Успешное получение количества товаров
+          schema:
+            type: object
+            properties:
+              inventory:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "Product 1"
+                    size:
+                      type: string
+                      example: "L"
+                    unique_code:
+                      type: string
+                      example: "code1"
+                    quantity:
+                      type: integer
+                      example: 10
+        400:
+          description: Ошибка в запросе
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Warehouse ID is required"
+definitions:
+  Warehouse:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      is_available:
+        type: boolean
+  Product:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      size:
+        type: string
+      unique_code:
+        type: string
+      quantity:
+        type: integer
+  Reservation:
+    type: object
+    properties:
+      id:
+        type: integer
+      product_id:
+        type: integer
+      warehouse_id:
+        type: integer
+      reserved_quantity:
+        type: integer
+

@@ -1,0 +1,10 @@
+server:
+  port: 8088
+
+database:
+  driver: postgres
+  user: user
+  password: password
+  name: lamoda
+  host: postgres
+  port: 5432
