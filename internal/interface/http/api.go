@@ -11,21 +11,21 @@ import (
 )
 
 type API struct {
-	warehouseService service.ReservationService
-	log              logger.Logger
+	reservationService service.ReservationService
+	log                logger.Logger
 }
 
-func NewAPI(ws service.ReservationService, log logger.Logger) *API {
+func NewAPI(rs service.ReservationService, log logger.Logger) *API {
 	return &API{
-		warehouseService: ws,
-		log:              log,
+		reservationService: rs,
+		log:                log,
 	}
 }
 
 func (a *API) GetInventory(ctx context.Context, r gen.GetInventoryRequestObject) (gen.GetInventoryResponseObject, error) {
 	requestID := RequestIDFromContext(ctx)
 
-	count, err := a.warehouseService.Inventory(ctx, uint(r.Params.WarehouseId))
+	count, err := a.reservationService.Inventory(ctx, uint(r.Params.WarehouseId))
 	if err != nil {
 		a.log.Warn("error getting inventory", "error", err, "requestID", requestID)
 
@@ -52,7 +52,7 @@ func (a *API) PostRelease(ctx context.Context, r gen.PostReleaseRequestObject) (
 		return gen.PostRelease400JSONResponse{Error: "not valid body"}, nil
 	}
 
-	err := a.warehouseService.ReleaseProducts(ctx, castToUint(r.Body.ProductCodes), uint(r.Body.WarehouseId))
+	err := a.reservationService.ReleaseProducts(ctx, castToUint(r.Body.ProductCodes), uint(r.Body.WarehouseId))
 	if err != nil {
 		a.log.Warn("error posting release", "error", err, "requestID", requestID)
 
@@ -79,7 +79,7 @@ func (a *API) PostReserve(ctx context.Context, r gen.PostReserveRequestObject) (
 		return gen.PostReserve400JSONResponse{Error: "not valid body"}, nil
 	}
 
-	err := a.warehouseService.ReserveProducts(
+	err := a.reservationService.ReserveProducts(
 		ctx,
 		castToUint(r.Body.ProductCodes),
 		uint(r.Body.WarehouseId),
