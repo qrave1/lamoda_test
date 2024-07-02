@@ -9,6 +9,15 @@ services:
     depends_on:
       - postgres
 
+  migrate:
+    container_name: migrate_app
+    entrypoint: ["./app", "-c", "config.yaml", "-s", "api.yaml", "migrate", "up"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+
   postgres:
     container_name: postgres_container
     image: postgres:15
