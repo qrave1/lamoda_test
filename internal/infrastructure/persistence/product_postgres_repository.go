@@ -2,47 +2,63 @@ package persistence
 
 import (
 	"database/sql"
-	"log/slog"
+	"errors"
 
 	"github.com/qrave1/lamoda_test/internal/domain/model"
 	"github.com/qrave1/lamoda_test/internal/domain/repository"
+	"github.com/qrave1/lamoda_test/pkg/logger"
 )
 
-type PostgresProductRepository struct {
+type ProductPostgresRepository struct {
 	db  *sql.DB
-	log *slog.Logger
+	log logger.Logger
 }
 
-var _ repository.ProductRepository = (*PostgresProductRepository)(nil)
+var _ repository.ProductRepository = (*ProductPostgresRepository)(nil)
 
-func NewPostgresProductRepository(db *sql.DB, log *slog.Logger) *PostgresProductRepository {
-	return &PostgresProductRepository{db, log}
+func NewProductPostgresRepository(db *sql.DB, log logger.Logger) *ProductPostgresRepository {
+	return &ProductPostgresRepository{db, log}
 }
 
-func (r *PostgresProductRepository) ProductByUniqueCode(tx *sql.Tx, code uint) (*model.Product, error) {
+func (pr *ProductPostgresRepository) ProductByUniqueCode(tx *sql.Tx, code uint) (*model.Product, error) {
 	var product model.Product
-	err := tx.QueryRow("SELECT id, name, size, code, quantity FROM products WHERE code = $1", code).
+	err := tx.QueryRow("SELECT id, name, size, code FROM products WHERE code = $1", code).
 		Scan(
 			&product.ID,
 			&product.Name,
 			&product.Size,
 			&product.Code,
-			&product.Quantity,
 		)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, repository.ErrNoRowsFound
+		}
 		return nil, err
 	}
 	return &product, nil
 }
 
-func (r *PostgresProductRepository) UpdateQuantityByUniqueCode(tx *sql.Tx, code uint, quantity uint) error {
-	res, err := tx.Exec("UPDATE products SET quantity = $1 WHERE code = $2", quantity, code)
-	if err != nil {
-		return err
-	}
-	rows, err := res.RowsAffected()
-	if rows == 0 && err == nil {
-		return ErrNoRowsAffected
-	}
-	return err
-}
+//func (pr *ProductPostgresRepository) ProductsByWarehouse(tx *sql.Tx, warehouseID uint) (
+//	res []*model.Product,
+//	err error,
+//) {
+//	rows, err := tx.Query(`SELECT p.id, p.name, p.code, pw.quantity, p.size FROM product_warehouse AS pw
+//    								INNER JOIN products p
+//    								    ON p.id = pw.product_id
+//    								    WHERE pw.warehouse_id = $1`, warehouseID,
+//	)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	for rows.Next() {
+//		var product model.Product
+//		err = rows.Scan(&product.ID, product.Name, &product.Code, &product.Size)
+//		if err != nil {
+//			return nil, err
+//		}
+//		res = append(res, &product)
+//	}
+//
+//	return
+//}

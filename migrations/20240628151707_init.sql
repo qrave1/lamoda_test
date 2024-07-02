@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS products
     id         SERIAL PRIMARY KEY,
     name       VARCHAR(100) NOT NULL,
     code       INT          NOT NULL,
-    quantity   INT          NOT NULL,
     size       INT          NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -23,28 +22,16 @@ CREATE TABLE IF NOT EXISTS product_warehouse
 (
     product_id        INT NOT NULL REFERENCES products (id),
     warehouse_id      INT NOT NULL REFERENCES warehouses (id),
-    quantity          INT NOT NULL,
-    reserved_quantity INT,
+    quantity          INT NOT NULL CHECK (quantity >= 0),
+    reserved_quantity INT       DEFAULT 0,
     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (product_id, warehouse_id)
 );
-
-
--- CREATE TABLE IF NOT EXISTS reservations
--- (
---     product_id        INT NOT NULL REFERENCES products (id),
---     warehouse_id      INT NOT NULL REFERENCES warehouses (id),
---     reserved_quantity INT NOT NULL,
---     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     PRIMARY KEY (product_id, warehouse_id)
--- );
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
--- DROP TABLE IF EXISTS reservations;
 DROP TABLE IF EXISTS product_warehouse;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS warehouses;

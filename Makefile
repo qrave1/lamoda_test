@@ -1,5 +1,5 @@
 IMAGE="lamoda_test"
-TAG=IMAGE+":latest"
+TAG=$(IMAGE)":latest"
 
 .PHONY: run
 run:
@@ -11,12 +11,25 @@ migrate:
 
 .PHONY: build
 build:
-	@docker build -t ($TAG) .
+	@docker build -t $(TAG) .
 
 .PHONY: dcup
 dcup:
-	@docker-compose up -d
+	@docker-compose up -d --build
 
 .PHONY: dcdn
 dcdn:
 	@docker-compose down
+
+.PHONY: swagger-gen
+swagger_gen:
+	@oapi-codegen \
+	-generate fiber,types,strict-server,spec \
+	-package gen -o internal/interface/http/gen/openapi_gen.go ./api/api.yaml
+
+.PHONY: tests
+tests:
+	@go run tests/random_data/random_data.go truncate
+	@go run tests/random_data/random_data.go insert
+	@go test ./tests -v
+	@go run tests/random_data/random_data.go truncate

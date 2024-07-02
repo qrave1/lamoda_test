@@ -19,7 +19,9 @@ func init() {
 		Action: func(c *cli.Context) error {
 			log := logger.New()
 
-			cfg, err := config.ReadConfig()
+			configPath := c.String("config")
+
+			cfg, err := config.ReadConfig(configPath)
 			if err != nil {
 				log.Error("error read config", "error", err)
 			}

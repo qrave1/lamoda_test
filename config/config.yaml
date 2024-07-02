@@ -5,5 +5,5 @@ database:
   user: user
   password: password
   name: lamoda
-  host: localhost
+  host: postgres
   port: 5432

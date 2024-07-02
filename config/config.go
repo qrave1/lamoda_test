@@ -24,8 +24,8 @@ type database struct {
 	Name     string `yaml:"name"`
 }
 
-func ReadConfig() (*Config, error) {
-	file, err := os.ReadFile("./config/config.yaml")
+func ReadConfig(path string) (*Config, error) {
+	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

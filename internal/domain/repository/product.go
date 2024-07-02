@@ -8,5 +8,7 @@ import (
 
 type ProductRepository interface {
 	ProductByUniqueCode(tx *sql.Tx, code uint) (*model.Product, error)
-	UpdateQuantityByUniqueCode(tx *sql.Tx, code uint, quantity uint) error
+
+	// если захочется возвращать не кол-во, а сами товары
+	//ProductsByWarehouse(tx *sql.Tx, warehouseID uint) ([]*model.Product, error)
 }

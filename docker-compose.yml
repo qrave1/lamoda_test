@@ -1,4 +1,14 @@
 services:
+  app:
+    container_name: lamoda_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
   postgres:
     container_name: postgres_container
     image: postgres:15
