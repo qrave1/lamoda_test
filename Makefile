@@ -1,6 +1,11 @@
 IMAGE="lamoda_test"
 TAG=$(IMAGE)":latest"
 
+.PHONY: init
+init:
+	@go install github.com/pressly/goose/v3/cmd/goose@latest
+	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
 .PHONY: run
 run:
 	@go run cmd/main.go
@@ -33,3 +38,7 @@ tests:
 	@go run tests/random_data/random_data.go insert
 	@go test ./tests -v
 	@go run tests/random_data/random_data.go truncate
+
+.PHONY: insert
+insert:
+	@go run tests/random_data/random_data.go insert
