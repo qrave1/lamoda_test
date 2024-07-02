@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"context"
 	"database/sql"
 	"log/slog"
 
@@ -20,34 +19,14 @@ func NewPostgresProductRepository(db *sql.DB, log *slog.Logger) *PostgresProduct
 	return &PostgresProductRepository{db, log}
 }
 
-func (r *PostgresProductRepository) ProductByUniqueCode(ctx context.Context, code uint) (*model.Product, error) {
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{
-		ReadOnly: true,
-	})
-	if err != nil {
-		return nil, TransactionStartError
-	}
-	defer func() {
-		if err != nil {
-			txErr := tx.Rollback()
-			if txErr != nil {
-				r.log.Error("Transaction rollback error", "error", txErr)
-			}
-		} else {
-			txErr := tx.Commit()
-			if txErr != nil {
-				r.log.Error("Transaction commit failed", "error", txErr)
-			}
-		}
-	}()
-
+func (r *PostgresProductRepository) ProductByUniqueCode(tx *sql.Tx, code uint) (*model.Product, error) {
 	var product model.Product
-	err = tx.QueryRow("SELECT id, name, size, unique_code, quantity FROM products WHERE unique_code = $1", code).
+	err := tx.QueryRow("SELECT id, name, size, code, quantity FROM products WHERE code = $1", code).
 		Scan(
 			&product.ID,
 			&product.Name,
 			&product.Size,
-			&product.UniqueCode,
+			&product.Code,
 			&product.Quantity,
 		)
 	if err != nil {
@@ -56,27 +35,14 @@ func (r *PostgresProductRepository) ProductByUniqueCode(ctx context.Context, cod
 	return &product, nil
 }
 
-func (r *PostgresProductRepository) UpdateQuantity(ctx context.Context, id uint, quantity int) error {
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{
-		ReadOnly: false,
-	})
+func (r *PostgresProductRepository) UpdateQuantityByUniqueCode(tx *sql.Tx, code uint, quantity uint) error {
+	res, err := tx.Exec("UPDATE products SET quantity = $1 WHERE code = $2", quantity, code)
 	if err != nil {
-		return TransactionStartError
+		return err
 	}
-	defer func() {
-		if err != nil {
-			txErr := tx.Rollback()
-			if txErr != nil {
-				r.log.Error("Transaction rollback error", "error", txErr)
-			}
-		} else {
-			txErr := tx.Commit()
-			if txErr != nil {
-				r.log.Error("Transaction commit failed", "error", txErr)
-			}
-		}
-	}()
-
-	_, err = tx.Exec("UPDATE products SET quantity = $1 WHERE id = $2", quantity, id)
+	rows, err := res.RowsAffected()
+	if rows == 0 && err == nil {
+		return ErrNoRowsAffected
+	}
 	return err
 }

@@ -1,42 +1,51 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE warehouses
+CREATE TABLE IF NOT EXISTS warehouses
 (
     id           SERIAL PRIMARY KEY,
     name         VARCHAR(255) NOT NULL,
     is_available BOOLEAN      NOT NULL
 );
 
-CREATE TABLE products
+CREATE TABLE IF NOT EXISTS products
 (
-    id          SERIAL PRIMARY KEY,
-    name        VARCHAR(255) NOT NULL,
-    size        VARCHAR(50)  NOT NULL,
-    unique_code VARCHAR(255) NOT NULL UNIQUE,
-    quantity    INT
+    id         SERIAL PRIMARY KEY,
+    name       VARCHAR(100) NOT NULL,
+    code       INT          NOT NULL,
+    quantity   INT          NOT NULL,
+    size       INT          NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (code)
 );
 
-CREATE TABLE reservations
+CREATE TABLE IF NOT EXISTS product_warehouse
 (
-    id                SERIAL PRIMARY KEY,
     product_id        INT NOT NULL REFERENCES products (id),
     warehouse_id      INT NOT NULL REFERENCES warehouses (id),
-    reserved_quantity INT NOT NULL CHECK (reserved_quantity >= 0),
-    UNIQUE (product_id, warehouse_id)
+    quantity          INT NOT NULL,
+    reserved_quantity INT,
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id, warehouse_id)
 );
 
-CREATE TABLE reservation_warehouse
-(
-    reservation_id INT NOT NULL REFERENCES reservations (id),
-    warehouse_id   INT NOT NULL REFERENCES warehouses (id),
-    PRIMARY KEY (reservation_id, warehouse_id)
-);
+
+-- CREATE TABLE IF NOT EXISTS reservations
+-- (
+--     product_id        INT NOT NULL REFERENCES products (id),
+--     warehouse_id      INT NOT NULL REFERENCES warehouses (id),
+--     reserved_quantity INT NOT NULL,
+--     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     PRIMARY KEY (product_id, warehouse_id)
+-- );
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS reservation_warehouse;
-DROP TABLE IF EXISTS reservations;
+-- DROP TABLE IF EXISTS reservations;
+DROP TABLE IF EXISTS product_warehouse;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS warehouses;
 -- +goose StatementEnd

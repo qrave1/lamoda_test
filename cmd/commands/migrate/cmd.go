@@ -2,10 +2,14 @@ package migrate
 
 import (
 	"context"
-	"log"
 	"time"
 
+	"github.com/pressly/goose/v3"
 	"github.com/qrave1/lamoda_test/cmd/commands"
+	"github.com/qrave1/lamoda_test/config"
+	"github.com/qrave1/lamoda_test/internal/infrastructure/persistence/postgres"
+	"github.com/qrave1/lamoda_test/migrations"
+	"github.com/qrave1/lamoda_test/pkg/logger"
 	"github.com/urfave/cli/v2"
 )
 
@@ -13,13 +17,20 @@ func init() {
 	commands.RegisterCommand(&cli.Command{
 		Name: "migrate",
 		Action: func(c *cli.Context) error {
-			cont, cleanup, err := factory.InitializeMigrationContainer()
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer cleanup()
+			log := logger.New()
 
-			goose.SetBaseFS(storage.EmbedMigrations)
+			cfg, err := config.ReadConfig()
+			if err != nil {
+				log.Error("error read config", "error", err)
+			}
+
+			conn, err := postgres.NewConnect(cfg)
+			if err != nil {
+				log.Error("error connect postgres", "error", err)
+			}
+			defer conn.Close()
+
+			goose.SetBaseFS(migrations.EmbedMigrations)
 			err = goose.SetDialect("postgres")
 			if err != nil {
 				panic(err)
@@ -31,8 +42,8 @@ func init() {
 			return goose.RunContext(
 				ctx,
 				c.Args().First(),
-				cont.DB(),
-				"migrations",
+				conn,
+				".",
 				c.Args().Get(1),
 			)
 		},

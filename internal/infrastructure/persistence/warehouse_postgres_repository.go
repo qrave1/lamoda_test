@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"context"
 	"database/sql"
 	"log/slog"
 
@@ -20,58 +19,30 @@ func NewWarehousePostgresRepository(db *sql.DB, log *slog.Logger) *WarehousePost
 	return &WarehousePostgresRepository{db, log}
 }
 
-func (r *WarehousePostgresRepository) Warehouse(ctx context.Context, id uint) (*model.Warehouse, error) {
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{
-		ReadOnly: true,
-	})
-	if err != nil {
-		return nil, TransactionStartError
-	}
-	defer func() {
-		if err != nil {
-			txErr := tx.Rollback()
-			if txErr != nil {
-				r.log.Error("Transaction rollback error", "error", txErr)
-			}
-		} else {
-			txErr := tx.Commit()
-			if txErr != nil {
-				r.log.Error("Transaction commit failed", "error", txErr)
-			}
-		}
-	}()
-
+func (r *WarehousePostgresRepository) WarehouseById(tx *sql.Tx, id uint) (*model.Warehouse, error) {
 	var warehouse model.Warehouse
-	query := "SELECT id, name, is_available FROM warehouses WHERE id = $1"
-	err = tx.QueryRow(query, id).Scan(&warehouse.ID, &warehouse.Name, &warehouse.IsAvailable)
+	err := tx.QueryRow("SELECT id, name, is_available FROM warehouses WHERE id = $1", id).
+		Scan(
+			&warehouse.ID,
+			&warehouse.Name,
+			&warehouse.IsAvailable,
+		)
 	if err != nil {
 		return nil, err
 	}
 	return &warehouse, nil
 }
 
-func (r *WarehousePostgresRepository) CreateWarehouse(ctx context.Context, wh *model.Warehouse) error {
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{
-		ReadOnly: false,
-	})
+func (r *WarehousePostgresRepository) WarehouseByAvailable(tx *sql.Tx) (*model.Warehouse, error) {
+	var warehouse model.Warehouse
+	err := tx.QueryRow("SELECT id, name, is_available FROM warehouses WHERE is_available = $1", true).
+		Scan(
+			&warehouse.ID,
+			&warehouse.Name,
+			&warehouse.IsAvailable,
+		)
 	if err != nil {
-		return TransactionStartError
+		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			txErr := tx.Rollback()
-			if txErr != nil {
-				r.log.Error("Transaction rollback error", "error", txErr)
-			}
-		} else {
-			txErr := tx.Commit()
-			if txErr != nil {
-				r.log.Error("Transaction commit failed", "error", txErr)
-			}
-		}
-	}()
-
-	query := "INSERT INTO warehouses (name, is_available) VALUES ($1, $2)"
-	err = tx.QueryRow(query, wh.Name, wh.IsAvailable).Err()
-	return err
+	return &warehouse, nil
 }
